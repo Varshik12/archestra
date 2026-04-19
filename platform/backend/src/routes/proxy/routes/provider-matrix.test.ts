@@ -2165,7 +2165,7 @@ describe("LLM proxy provider matrix", () => {
         expect(blockedResponse.statusCode).toBe(429);
         expect(blockedResponse.json()).toMatchObject({
           error: {
-            code: "token_cost_limit_exceeded",
+            code: "llm_limit_exceeded",
           },
         });
       });

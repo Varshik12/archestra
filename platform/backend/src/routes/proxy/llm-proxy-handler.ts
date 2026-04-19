@@ -109,6 +109,8 @@ export interface LLMProxyContext<TRequest> {
   unsafeContextBoundary?: UnsafeContextBoundary;
   externalAgentId?: string;
   userId?: string;
+  /** Set when the request authenticated with a platform virtual API key. */
+  virtualApiKeyId?: string;
   resolvedUser?: { id: string; email: string; name: string } | null;
   sessionId?: string | null;
   sessionSource?: SessionSource;
@@ -248,6 +250,7 @@ export async function handleLLMProxy<
   let perKeyBaseUrl: string | undefined;
   let wasJwksAuthenticated = false;
   let wasVirtualKeyResolved = false;
+  let virtualApiKeyId: string | undefined;
 
   // 1. Try JWKS auth if the agent has an external identity provider configured
   const jwksResult = await attemptJwksAuth(
@@ -288,6 +291,7 @@ export async function handleLLMProxy<
       );
       apiKey = virtualResult.apiKey;
       perKeyBaseUrl = virtualResult.baseUrl;
+      virtualApiKeyId = virtualResult.virtualKeyId;
       wasVirtualKeyResolved = true;
     } catch (error) {
       if (error instanceof ApiError && error.statusCode === 401) {
@@ -312,19 +316,22 @@ export async function handleLLMProxy<
       `[${providerName}Proxy] Checking usage limits`,
     );
     const limitViolation =
-      await LimitValidationService.checkLimitsBeforeRequest(resolvedAgentId);
+      await LimitValidationService.checkLimitsBeforeRequest(
+        resolvedAgentId,
+        { userId, virtualApiKeyId },
+      );
 
     if (limitViolation) {
       const [_refusalMessage, contentMessage] = limitViolation;
       logger.info(
-        { resolvedAgentId, reason: "token_cost_limit_exceeded" },
-        `${providerName} request blocked due to token cost limit`,
+        { resolvedAgentId, reason: "llm_limit_exceeded" },
+        `${providerName} request blocked due to LLM budget limit`,
       );
       return reply.status(429).send({
         error: {
           message: contentMessage,
           type: "rate_limit_exceeded",
-          code: "token_cost_limit_exceeded",
+          code: "llm_limit_exceeded",
         },
       });
     }
@@ -593,6 +600,7 @@ export async function handleLLMProxy<
       unsafeContextBoundary,
       externalAgentId,
       userId,
+      virtualApiKeyId,
       resolvedUser,
       sessionId,
       sessionSource,
@@ -628,6 +636,7 @@ export async function handleLLMProxy<
         externalAgentId,
         executionId,
         userId,
+        virtualApiKeyId,
         sessionId,
         sessionSource,
         source,
@@ -689,6 +698,7 @@ async function handleStreaming<
     unsafeContextBoundary,
     externalAgentId,
     userId,
+    virtualApiKeyId,
     resolvedUser,
     sessionId,
     sessionSource,
@@ -1006,6 +1016,7 @@ async function handleStreaming<
             externalAgentId,
             executionId,
             userId,
+            virtualApiKeyId,
             sessionId,
             sessionSource,
             source,
@@ -1064,6 +1075,7 @@ async function handleNonStreaming<
     unsafeContextBoundary,
     externalAgentId,
     userId,
+    virtualApiKeyId,
     resolvedUser,
     sessionId,
     sessionSource,
@@ -1210,6 +1222,7 @@ async function handleNonStreaming<
           externalAgentId,
           executionId,
           userId,
+          virtualApiKeyId,
           sessionId,
           sessionSource,
           source,
@@ -1273,6 +1286,7 @@ async function handleNonStreaming<
         externalAgentId,
         executionId,
         userId,
+        virtualApiKeyId,
         sessionId,
         sessionSource,
         source,
