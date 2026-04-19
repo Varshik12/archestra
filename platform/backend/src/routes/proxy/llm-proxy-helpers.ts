@@ -102,6 +102,8 @@ export function buildInteractionRecord(params: {
   externalAgentId?: string;
   executionId?: string;
   userId?: string;
+  /** Present when the caller authenticated with a platform virtual API key. */
+  virtualApiKeyId?: string;
   sessionId?: string | null;
   sessionSource?: SessionSource;
   source?: InteractionSource | null;
@@ -123,6 +125,7 @@ export function buildInteractionRecord(params: {
     externalAgentId: params.externalAgentId,
     executionId: params.executionId,
     userId: params.userId,
+    virtualApiKeyId: params.virtualApiKeyId,
     sessionId: params.sessionId,
     sessionSource: params.sessionSource,
     source: params.source,

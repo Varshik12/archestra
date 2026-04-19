@@ -332,6 +332,14 @@ describe("buildInteractionRecord", () => {
     const record = buildInteractionRecord(baseParams);
     expect(record.source).toBeUndefined();
   });
+
+  test("includes virtualApiKeyId when provided", () => {
+    const record = buildInteractionRecord({
+      ...baseParams,
+      virtualApiKeyId: "vk-uuid-1",
+    });
+    expect(record.virtualApiKeyId).toBe("vk-uuid-1");
+  });
 });
 
 // --------------------------------------------------------------------------

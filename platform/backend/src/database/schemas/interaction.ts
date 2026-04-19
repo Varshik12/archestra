@@ -22,6 +22,7 @@ import type {
 } from "@/types";
 import agentsTable from "./agent";
 import usersTable from "./user";
+import virtualApiKeysTable from "./virtual-api-key";
 
 const interactionsTable = pgTable(
   "interactions",
@@ -104,6 +105,9 @@ const interactionsTable = pgTable(
       table.executionId,
     ),
     userIdIdx: index("interactions_user_id_idx").on(table.userId),
+    virtualApiKeyIdIdx: index("interactions_virtual_api_key_id_idx").on(
+      table.virtualApiKeyId,
+    ),
     sessionIdIdx: index("interactions_session_id_idx").on(table.sessionId),
     createdAtIdx: index("interactions_created_at_idx").on(
       table.createdAt.desc(),

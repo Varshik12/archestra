@@ -10,18 +10,37 @@ import { schema } from "@/database";
  * Entity types that can have limits applied
  */
 // TODO: need to make a database migration to migrate agent -> profile
-export const LimitEntityTypeSchema = z.enum(["organization", "team", "agent"]);
+export const LimitEntityTypeSchema = z.enum([
+  "organization",
+  "team",
+  "agent",
+  "user",
+  "virtual_api_key",
+  "global",
+]);
 export type LimitEntityType = z.infer<typeof LimitEntityTypeSchema>;
+
+/** Single global platform row for `entityType: "global"` limits (value of limits.entity_id). */
+export const GLOBAL_LIMIT_ENTITY_ID = "global" as const;
 
 /**
  * Types of limits that can be applied
  */
 export const LimitTypeSchema = z.enum([
   "token_cost",
+  "token_input",
+  "token_output",
   "mcp_server_calls",
   "tool_calls",
 ]);
 export type LimitType = z.infer<typeof LimitTypeSchema>;
+
+/** LLM budgeting limit kinds that share per-model usage counters in limit_model_usage */
+export const LLM_TOKEN_LIMIT_TYPES = [
+  "token_cost",
+  "token_input",
+  "token_output",
+] as const satisfies readonly LimitType[];
 
 /**
  * Base database schema derived from Drizzle
@@ -73,8 +92,12 @@ export const CreateLimitSchema = InsertLimitSchema.omit({
         return false;
       }
     }
-    // Validation: token_cost requires non-empty model array and should not have mcp or tool specificity
-    if (data.limitType === "token_cost") {
+    // Validation: token_cost / token_input / token_output require non-empty model array
+    if (
+      data.limitType === "token_cost" ||
+      data.limitType === "token_input" ||
+      data.limitType === "token_output"
+    ) {
       if (
         !data.model ||
         !Array.isArray(data.model) ||

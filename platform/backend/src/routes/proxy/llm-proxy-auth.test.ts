@@ -132,7 +132,7 @@ describe("validateVirtualApiKey", () => {
       provider: "openai",
     });
 
-    const { value } = await VirtualApiKeyModel.create({
+    const { value, virtualKey } = await VirtualApiKeyModel.create({
       chatApiKeyId: chatApiKey.id,
       name: "valid-key",
     });
@@ -140,6 +140,7 @@ describe("validateVirtualApiKey", () => {
     const result = await validateVirtualApiKey(value, "openai");
     expect(result.apiKey).toBe("sk-real-provider-key");
     expect(result.baseUrl).toBeUndefined();
+    expect(result.virtualKeyId).toBe(virtualKey.id);
   });
 
   test("returns baseUrl when chat API key has one configured", async ({
@@ -161,7 +162,7 @@ describe("validateVirtualApiKey", () => {
       baseUrl: "https://custom-openai.example.com/v1",
     });
 
-    const { value } = await VirtualApiKeyModel.create({
+    const { value, virtualKey } = await VirtualApiKeyModel.create({
       chatApiKeyId: chatApiKey.id,
       name: "key-with-base-url",
     });
@@ -169,6 +170,7 @@ describe("validateVirtualApiKey", () => {
     const result = await validateVirtualApiKey(value, "openai");
     expect(result.apiKey).toBe("sk-real-key");
     expect(result.baseUrl).toBe("https://custom-openai.example.com/v1");
+    expect(result.virtualKeyId).toBe(virtualKey.id);
   });
 
   test("returns undefined apiKey when chat API key has no secretId", async () => {
@@ -199,6 +201,7 @@ describe("validateVirtualApiKey", () => {
     );
     expect(result.apiKey).toBeUndefined();
     expect(result.baseUrl).toBeUndefined();
+    expect(result.virtualKeyId).toBe("vk-1");
 
     spy.mockRestore();
   });
@@ -215,7 +218,7 @@ describe("validateVirtualApiKey", () => {
       provider: "gemini",
     });
 
-    const { value } = await VirtualApiKeyModel.create({
+    const { value, virtualKey } = await VirtualApiKeyModel.create({
       chatApiKeyId: systemKey.id,
       name: "virtual-for-system-key",
     });
@@ -223,6 +226,7 @@ describe("validateVirtualApiKey", () => {
     const result = await validateVirtualApiKey(value, "gemini");
     expect(result.apiKey).toBeUndefined();
     expect(result.baseUrl).toBeUndefined();
+    expect(result.virtualKeyId).toBe(virtualKey.id);
   });
 });
 

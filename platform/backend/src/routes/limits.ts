@@ -50,10 +50,14 @@ const limitsRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       const limits = await LimitModel.findAll(entityType, entityId, limitType);
 
-      // Add per-model usage breakdown for token_cost limits
+      // Add per-model usage breakdown for LLM budget limits
       const limitsWithUsage = await Promise.all(
         limits.map(async (limit) => {
-          if (limit.limitType === "token_cost") {
+          if (
+            limit.limitType === "token_cost" ||
+            limit.limitType === "token_input" ||
+            limit.limitType === "token_output"
+          ) {
             const modelUsage = await LimitModel.getModelUsageBreakdown(
               limit.id,
             );

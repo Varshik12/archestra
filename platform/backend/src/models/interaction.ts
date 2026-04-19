@@ -22,12 +22,13 @@ import {
   type PaginatedResult,
 } from "@/database/utils/pagination";
 import logger from "@/logging";
-import type {
-  InsertInteraction,
-  Interaction,
-  SessionSummary,
-  SortingQuery,
-  UserInfo,
+import {
+  type InsertInteraction,
+  type Interaction,
+  GLOBAL_LIMIT_ENTITY_ID,
+  type SessionSummary,
+  type SortingQuery,
+  type UserInfo,
 } from "@/types";
 import AgentTeamModel from "./agent-team";
 import LimitModel from "./limit";
@@ -745,6 +746,41 @@ class InteractionModel {
           outputTokens,
         ),
       );
+
+      // Global platform limit + per-user + per-virtual-key rollups
+      updatePromises.push(
+        LimitModel.updateTokenLimitUsage(
+          "global",
+          GLOBAL_LIMIT_ENTITY_ID,
+          model,
+          inputTokens,
+          outputTokens,
+        ),
+      );
+
+      if (interaction.userId) {
+        updatePromises.push(
+          LimitModel.updateTokenLimitUsage(
+            "user",
+            interaction.userId,
+            model,
+            inputTokens,
+            outputTokens,
+          ),
+        );
+      }
+
+      if (interaction.virtualApiKeyId) {
+        updatePromises.push(
+          LimitModel.updateTokenLimitUsage(
+            "virtual_api_key",
+            interaction.virtualApiKeyId,
+            model,
+            inputTokens,
+            outputTokens,
+          ),
+        );
+      }
 
       // Execute all updates in parallel
       await Promise.all(updatePromises);
